@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Chinese Food Monitoring Report — Downtown Vancouver</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-amber-500/20 text-amber-400 rounded-lg border border-amber-500/30">
+                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h1 class="font-bold text-lg leading-tight tracking-wide text-slate-100">Monthly Chinese Food Monitoring Report</h1>
+                        <span class="px-2 py-0.5 text-xs font-semibold uppercase tracking-wider bg-amber-500/20 text-amber-300 rounded border border-amber-500/30">Draft</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">Downtown Vancouver Study Area | Prepared for Julian Wang</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4 text-xs text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded-md border border-slate-700/60 self-start md:self-auto">
+                <div><span class="text-slate-400">Cutoff:</span> <strong class="text-slate-200">27 Oct 2026</strong></div>
+                <div class="h-3 w-px bg-slate-700"></div>
+                <div><span class="text-slate-400">Method:</span> <strong class="text-slate-200">V1 Lock</strong></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
+
+        <!-- Permanent Limits Panel (Mandatory Notice) -->
+        <section class="bg-amber-50/90 border-l-4 border-amber-500 rounded-r-lg p-4 shadow-sm border border-amber-200/60">
+            <div class="flex items-start space-x-3">
+                <div class="p-1 bg-amber-100 text-amber-700 rounded mt-0.5 shrink-0">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div class="space-y-1">
+                    <h2 class="font-bold text-amber-900 text-sm uppercase tracking-wider">Methodological Limits & Boundary Constraints (Verbatim Constraints)</h2>
+                    <ul class="text-xs text-amber-900/90 space-y-1 list-disc list-inside leading-relaxed">
+                        <li><strong>These are licence records, not a restaurant census, continuous-trading evidence or proof of current opening. No COVID effect is claimed.</strong></li>
+                        <li><strong>Most records remain unclassified. Unlocated records are excluded because their membership in the downtown study area is unknown.</strong></li>
+                        <li><strong>A shuttered door on one visit is not proof of permanent closure.</strong></li>
+                        <li><strong>Not assessed is not zero.</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Cumulative Dataset Distinction Callout -->
+        <section class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start space-x-3">
+                <div class="p-1.5 bg-blue-100 text-blue-700 rounded mt-0.5 shrink-0">
+                    <i data-lucide="database" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-blue-900 uppercase tracking-wider">Dataset Architecture Distinction</h3>
+                    <p class="text-xs text-blue-800 mt-0.5">
+                        <strong class="font-semibold text-blue-950">105-Row Master Set (Cumulative):</strong> The original cumulative dataset lifecycle record (unchanged).<br>
+                        <strong class="font-semibold text-blue-950">Annual Licence Series (Yearly Snapshots):</strong> Annual deduplicated issued-licence records isolated by cutoff year (2015–2026).
+                    </p>
+                </div>
+            </div>
+            <div class="bg-white px-3 py-2 rounded border border-blue-200 shrink-0 text-center shadow-sm">
+                <div class="text-2xl font-extrabold text-blue-900 leading-none">105</div>
+                <div class="text-[10px] font-medium text-blue-600 uppercase tracking-wider mt-1">Cumulative Master CSV</div>
+            </div>
+        </section>
+
+        <!-- Interactive Chart & Annual Explorer Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Chart Panel (2 Columns on Large Screens) -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+                        <div>
+                            <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i data-lucide="line-chart" class="w-4 h-4 text-slate-500"></i>
+                                Annual Issued-Licence Series (2015–2026)
+                            </h2>
+                            <p class="text-xs text-slate-500">Deduplicated issued records within locked study boundary</p>
+                        </div>
+                        
+                        <!-- Chart Toggles -->
+                        <div class="flex flex-wrap gap-2">
+                            <label class="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200 cursor-pointer hover:bg-red-100 transition">
+                                <input type="checkbox" id="toggleChinese" checked class="rounded text-red-600 focus:ring-red-500 mr-1.5 h-3.5 w-3.5">
+                                Chinese Food
+                            </label>
+                            <label class="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 cursor-pointer hover:bg-blue-100 transition">
+                                <input type="checkbox" id="toggleNonChinese" checked class="rounded text-blue-600 focus:ring-blue-500 mr-1.5 h-3.5 w-3.5">
+                                Non-Chinese
+                            </label>
+                            <label class="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700 border border-slate-300 cursor-pointer hover:bg-slate-200 transition">
+                                <input type="checkbox" id="toggleUnclassified" checked class="rounded text-slate-600 focus:ring-slate-500 mr-1.5 h-3.5 w-3.5">
+                                Unclassified
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Container -->
+                    <div class="relative w-full h-72">
+                        <canvas id="licenceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart Legend & Annotations Legend -->
+                <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    <div class="bg-amber-50/70 p-2 rounded border border-amber-200/70 flex items-start space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0"></span>
+                        <div>
+                            <strong class="font-semibold text-amber-900">2020 COVID Onset:</strong>
+                            <p class="text-[11px] text-amber-800 leading-tight">Reference marker only. NO COVID effect claimed.</p>
+                        </div>
+                    </div>
+                    <div class="bg-purple-50/70 p-2 rounded border border-purple-200/70 flex items-start space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-purple-500 mt-1 shrink-0"></span>
+                        <div>
+                            <strong class="font-semibold text-purple-900">2024 Transition:</strong>
+                            <p class="text-[11px] text-purple-800 leading-tight">Source dataset & category schema shift.</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-100 p-2 rounded border border-slate-200 flex items-start space-x-1.5">
+                        <span class="w-2 h-2 rounded-full bg-slate-400 mt-1 shrink-0"></span>
+                        <div>
+                            <strong class="font-semibold text-slate-800">2026 Incomplete:</strong>
+                            <p class="text-[11px] text-slate-600 leading-tight">Year-to-date snapshot as of Oct 2026.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Year Explorer & Counts -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i data-lucide="sliders" class="w-4 h-4 text-slate-500"></i>
+                            Year Snapshot Explorer
+                        </h2>
+                        <span id="selectedYearDisplay" class="text-lg font-black text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-300">2026</span>
+                    </div>
+
+                    <!-- Year Slider -->
+                    <div class="mt-5 space-y-2">
+                        <div class="flex justify-between text-xs font-semibold text-slate-500">
+                            <span>2015</span>
+                            <span>2020</span>
+                            <span>2026 (YTD)</span>
+                        </div>
+                        <input type="range" id="yearSlider" min="2015" max="2026" value="2026" step="1" 
+                               class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-800 focus:outline-none">
+                    </div>
+
+                    <!-- Selected Year Counts Grid -->
+                    <div class="mt-6 space-y-3">
+                        <div id="statusBadge2026" class="hidden p-2 bg-slate-100 text-slate-700 text-xs font-medium rounded border border-slate-300 flex items-center space-x-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-slate-500 shrink-0"></i>
+                            <span><strong>Incomplete YTD Record:</strong> Year 2026 is currently partial at cutoff date.</span>
+                        </div>
+
+                        <!-- Chinese Food Count -->
+                        <div class="p-3 bg-red-50/80 rounded-lg border border-red-200/80 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-red-900 block">Chinese Food</span>
+                                <span class="text-[10px] text-red-700">Inc. Taiwanese cuisines</span>
+                            </div>
+                            <span id="countChinese" class="text-2xl font-black text-red-700">16</span>
+                        </div>
+
+                        <!-- Non-Chinese Food Count -->
+                        <div class="p-3 bg-blue-50/80 rounded-lg border border-blue-200/80 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-blue-900 block">Non-Chinese Food</span>
+                                <span class="text-[10px] text-blue-700">Other culinary categories</span>
+                            </div>
+                            <span id="countNonChinese" class="text-2xl font-black text-blue-700">219</span>
+                        </div>
+
+                        <!-- Unclassified Count -->
+                        <div class="p-3 bg-slate-100/90 rounded-lg border border-slate-300 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-slate-900 block">Unclassified / Not Shown</span>
+                                <span class="text-[10px] text-slate-600">Pending verified evidence</span>
+                            </div>
+                            <span id="countUnclassified" class="text-2xl font-black text-slate-700">967</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1">
+                    <p>• Counts represent deduplicated issued licence records at cutoff.</p>
+                    <p>• Unlocated records excluded due to unknown study boundary membership.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Monthly Monitoring Report Template Panels -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="bg-slate-900 text-white px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                <div>
+                    <h2 class="font-bold text-base flex items-center gap-2">
+                        <i data-lucide="clipboard-list" class="w-5 h-5 text-amber-400"></i>
+                        Monthly Report Sections (Template Lock)
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">All initial unassessed sections strictly default to "not assessed". Fillable panels for active updates.</p>
+                </div>
+                <span class="text-xs font-medium px-2.5 py-1 bg-slate-800 text-slate-300 rounded border border-slate-700">
+                    Template Release V1
+                </span>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="border-b border-slate-200 bg-slate-50 px-4 pt-2 overflow-x-auto flex space-x-1 custom-scrollbar text-xs font-medium text-slate-600">
+                <button onclick="switchTab('sec-scope')" id="tab-sec-scope" class="tab-btn px-3 py-2 border-b-2 border-slate-800 text-slate-900 font-bold whitespace-nowrap">1. Scope & Method Lock</button>
+                <button onclick="switchTab('sec-summary')" id="tab-sec-summary" class="tab-btn px-3 py-2 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">2. Monthly Count Summary</button>
+                <button onclick="switchTab('sec-changed')" id="tab-sec-changed" class="tab-btn px-3 py-2 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">3. Records Changed</button>
+                <button onclick="switchTab('sec-explain')" id="tab-sec-explain" class="tab-btn px-3 py-2 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">4. Explain Changes</button>
+                <button onclick="switchTab('sec-source')" id="tab-sec-source" class="tab-btn px-3 py-2 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">5. Source & Comparability</button>
+                <button onclick="switchTab('sec-field')" id="tab-sec-field" class="tab-btn px-3 py-2 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">6. Field & Takeout</button>
+                <button onclick="switchTab('sec-gaps')" id="tab-sec-gaps" class="tab-btn px-3 py-2 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">7. Gaps & Next Cycle</button>
+                <button onclick="switchTab('sec-review')" id="tab-sec-review" class="tab-btn px-3 py-2 border-b-2 border-transparent hover:text-slate-900 whitespace-nowrap">8. Review & Release</button>
+            </div>
+
+            <!-- Tab Panels Content Container -->
+            <div class="p-6">
+
+                <!-- 1. Scope and Method Lock -->
+                <div id="sec-scope" class="tab-content space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="lock" class="w-4 h-4 text-slate-500"></i> Section 1: Scope and Method Lock
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <strong class="text-slate-800 block mb-1">Geographic Boundary:</strong>
+                            <p class="text-slate-600">Downtown and West End City local areas, plus explicit Chinatown study extension to Gore. Origin parcel point: 137 Keefer (49.2797647, -123.1011919 WGS84).</p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                            <strong class="text-slate-800 block mb-1">Cuisine Classification Rule:</strong>
+                            <p class="text-slate-600">One Chinese-food banner, including Taiwanese cuisines. Non-Chinese food separate. Unclassified records remain unclassified. Cuisine is not owner ethnicity.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Monthly Count Summary -->
+                <div id="sec-summary" class="tab-content hidden space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="table" class="w-4 h-4 text-slate-500"></i> Section 2: Monthly Count Summary
+                    </h3>
+                    <p class="text-xs text-slate-500">Baseline vs Current snapshot state comparison at cutoff.</p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border border-slate-200 rounded">
+                            <thead class="bg-slate-100 text-slate-700 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-2.5 border-b">Licence Series Category</th>
+                                    <th class="p-2.5 border-b">Baseline Count</th>
+                                    <th class="p-2.5 border-b">Current Count</th>
+                                    <th class="p-2.5 border-b">Change Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr>
+                                    <td class="p-2.5 font-medium text-slate-800">Chinese Food (inc. Taiwanese)</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px]">not assessed</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium text-slate-800">Non-Chinese Food</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px]">not assessed</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium text-slate-800">Unclassified (Not on maps)</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px]">not assessed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. Licence Records Changed -->
+                <div id="sec-changed" class="tab-content hidden space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="git-commit" class="w-4 h-4 text-slate-500"></i> Section 3: Licence Records Changed
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border border-slate-200 rounded">
+                            <thead class="bg-slate-100 text-slate-700 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-2.5 border-b">Record & Venue Ref (Year/RSN/Address)</th>
+                                    <th class="p-2.5 border-b">Observed Source Change</th>
+                                    <th class="p-2.5 border-b">Before & After Evidence</th>
+                                    <th class="p-2.5 border-b">Review State</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr>
+                                    <td class="p-2.5 text-slate-500 italic">[year / RSN / revision / address]</td>
+                                    <td class="p-2.5 text-slate-500 italic">[added / absent / modified]</td>
+                                    <td class="p-2.5 text-slate-500 italic">[old value; new value; snapshot ID]</td>
+                                    <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px]">not assessed</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 4. Explain Count Changes -->
+                <div id="sec-explain" class="tab-content hidden space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-slate-500"></i> Section 4: Explain Count Changes
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border border-slate-200 rounded">
+                            <thead class="bg-slate-100 text-slate-700 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-2.5 border-b">Change Reason Category</th>
+                                    <th class="p-2.5 border-b">Count / Gap</th>
+                                    <th class="p-2.5 border-b">Evidence & Reconciliation</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-200">
+                                <tr>
+                                    <td class="p-2.5 font-medium text-slate-800">Licence records added or absent</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5 text-slate-500 italic">[snapshot comparison; not openings or closures]</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium text-slate-800">Source revisions & duplicates</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5 text-slate-500 italic">[source IDs retained; no silent deletion]</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-medium text-slate-800">Cuisine classification changed</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                    <td class="p-2.5 text-slate-500 italic">[old/new category; evidence date]</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 5. Source and Comparability Checks -->
+                <div id="sec-source" class="tab-content hidden space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="check-circle" class="w-4 h-4 text-slate-500"></i> Section 5: Source and Comparability Checks
+                    </h3>
+                    <div class="p-4 bg-slate-50 rounded border border-slate-200 text-xs space-y-2">
+                        <p><strong>Source Refresh Successful:</strong> <span class="italic text-slate-500">not assessed</span></p>
+                        <p><strong>Missing-Coordinate Records:</strong> <span class="italic text-slate-500">not assessed</span> (Unlocated records excluded from study area until coordinates verified).</p>
+                        <p><strong>2024 Category Transition Note:</strong> City dataset schema changed May 2024. For annual 2024, both sources retained and deduplicated under locked V1 rules.</p>
+                    </div>
+                </div>
+
+                <!-- 6. Field Openings / Closures and Takeout -->
+                <div id="sec-field" class="tab-content hidden space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="map-pin" class="w-4 h-4 text-slate-500"></i> Section 6: Field Openings, Closures & Takeout
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="p-3 bg-amber-50 rounded border border-amber-200 text-xs text-amber-900">
+                            <strong>Field Evidence Principle:</strong> A shuttered door on one visit is not proof of permanent closure. Public announcements awaiting field confirmation are kept separate.
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs text-left border border-slate-200 rounded">
+                                <thead class="bg-slate-100 text-slate-700 uppercase text-[10px]">
+                                    <tr>
+                                        <th class="p-2.5 border-b">Venue ID & Address</th>
+                                        <th class="p-2.5 border-b">Event & Dates</th>
+                                        <th class="p-2.5 border-b">Evidence & Verifier</th>
+                                        <th class="p-2.5 border-b">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="p-2.5 text-slate-500 italic">[venue ID / address]</td>
+                                        <td class="p-2.5 text-slate-500 italic">[observed state / date]</td>
+                                        <td class="p-2.5 text-slate-500 italic">[field note / reviewer]</td>
+                                        <td class="p-2.5"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px]">not assessed</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. Gaps and Next Cycle -->
+                <div id="sec-gaps" class="tab-content hidden space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="alert-circle" class="w-4 h-4 text-slate-500"></i> Section 7: Evidence Gaps & Next Reporting Cycle
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border border-slate-200 rounded">
+                            <thead class="bg-slate-100 text-slate-700 uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-2.5 border-b">Identified Evidence Gap</th>
+                                    <th class="p-2.5 border-b">Affected Period / Records</th>
+                                    <th class="p-2.5 border-b">Next Action & Owner</th>
+                                    <th class="p-2.5 border-b">Due Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-2.5 text-slate-500 italic">[unclassified cuisine]</td>
+                                    <td class="p-2.5 text-slate-500 italic">[IDs / years]</td>
+                                    <td class="p-2.5 text-slate-500 italic">[dated evidence lookup]</td>
+                                    <td class="p-2.5 text-slate-500 italic">not assessed</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 8. Review and Release Record -->
+                <div id="sec-review" class="tab-content hidden space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-slate-500"></i> Section 8: Review and Release Record
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200 space-y-1.5">
+                            <p><strong>AI Run ID / Model:</strong> <span class="italic text-slate-500">not assessed</span></p>
+                            <p><strong>Human Reviewer:</strong> <span class="italic text-slate-500">not assessed</span></p>
+                            <p><strong>Proposed Findings:</strong> <span class="italic text-slate-500">not assessed</span></p>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded border border-slate-200 space-y-1.5">
+                            <p><strong>Corrections Applied:</strong> <span class="italic text-slate-500">not assessed</span></p>
+                            <p><strong>Unresolved Findings Withheld:</strong> <span class="italic text-slate-500">not assessed</span></p>
+                            <p><strong>Release Version:</strong> <span class="italic text-slate-500">not assessed</span></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Permanent Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-2 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="space-y-1">
+                <p class="font-semibold text-slate-300">Sources & Methodology Framework:</p>
+                <p class="text-[11px] leading-relaxed max-w-4xl text-slate-400">
+                    Sources: City business licences 2013-2024 and 2024 onward, both 2024 sources deduplicated, Frozen four-map classification method V1, snapshot compiled 27 October 2026, Open Government Licence - Vancouver.
+                </p>
+            </div>
+            <div class="text-[11px] text-slate-500 shrink-0">
+                Julian Wang Study Series
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Script -->
+    <script>
+        // Locked Data
+        const reportData = {
+            years: [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026],
+            chinese: [16, 16, 18, 19, 20, 19, 20, 19, 17, 17, 16, 16],
+            nonChinese: [189, 195, 204, 203, 205, 201, 201, 202, 210, 212, 217, 219],
+            unclassified: [995, 992, 991, 1013, 1011, 950, 930, 964, 976, 944, 951, 967]
+        };
+
+        let chartInstance = null;
+
+        // Initialize Icons & App
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            initChart();
+            setupEventListeners();
+            updateYearDisplay(2026);
+        });
+
+        // Initialize Chart.js Chart
+        function initChart() {
+            const ctx = document.getElementById('licenceChart').getContext('2d');
+
+            // Canvas Plugin for Background Highlights (2020 COVID Onset & 2026 YTD)
+            const backgroundPlugin = {
+                id: 'customBackgroundHighlights',
+                beforeDraw: (chart) => {
+                    const { ctx, chartArea: { top, bottom, left, right }, scales: { x } } = chart;
+                    if (!x) return;
+
+                    // 2020 Highlight
+                    const x2020 = x.getPixelForValue(5); // Index 5 = 2020
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(245, 158, 11, 0.12)';
+                    ctx.fillRect(x2020 - 18, top, 36, bottom - top);
+                    ctx.restore();
+
+                    // 2026 Incomplete Highlight
+                    const x2026 = x.getPixelForValue(11); // Index 11 = 2026
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(100, 116, 139, 0.12)';
+                    ctx.fillRect(x2026 - 18, top, 36, bottom - top);
+                    ctx.restore();
+                }
+            };
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: reportData.years.map(y => y === 2026 ? '2026 (YTD)' : y.toString()),
+                    datasets: [
+                        {
+                            label: 'Chinese Food',
+                            data: reportData.chinese,
+                            borderColor: '#dc2626',
+                            backgroundColor: '#dc2626',
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Non-Chinese Food',
+                            data: reportData.nonChinese,
+                            borderColor: '#2563eb',
+                            backgroundColor: '#2563eb',
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Unclassified',
+                            data: reportData.unclassified,
+                            borderColor: '#64748b',
+                            backgroundColor: '#64748b',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                plugins: [backgroundPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Handled via custom HTML checkboxes
+                        },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            padding: 10,
+                            titleFont: { size: 12, weight: 'bold' },
+                            bodyFont: { size: 11 },
+                            callbacks: {
+                                afterTitle: function(context) {
+                                    const yearStr = context[0].label;
+                                    if (yearStr.includes('2020')) return 'Annotation: 2020 COVID onset (Reference only, NO COVID effect claimed)';
+                                    if (yearStr.includes('2024')) return 'Annotation: 2024 source & category transition';
+                                    if (yearStr.includes('2026')) return 'Status: Incomplete year-to-date snapshot';
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { font: { size: 11 } }
+                        },
+                        y: {
+                            grid: { color: '#e2e8f0' },
+                            ticks: { font: { size: 11 } },
+                            beginAtZero: true
+                        }
+                    },
+                    onClick: (e, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const year = reportData.years[index];
+                            document.getElementById('yearSlider').value = year;
+                            updateYearDisplay(year);
+                        }
+                    }
+                }
+            });
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Toggle Chinese
+            document.getElementById('toggleChinese').addEventListener('change', (e) => {
+                chartInstance.setDatasetVisibility(0, e.target.checked);
+                chartInstance.update();
+            });
+
+            // Toggle Non-Chinese
+            document.getElementById('toggleNonChinese').addEventListener('change', (e) => {
+                chartInstance.setDatasetVisibility(1, e.target.checked);
+                chartInstance.update();
+            });
+
+            // Toggle Unclassified
+            document.getElementById('toggleUnclassified').addEventListener('change', (e) => {
+                chartInstance.setDatasetVisibility(2, e.target.checked);
+                chartInstance.update();
+            });
+
+            // Slider input
+            document.getElementById('yearSlider').addEventListener('input', (e) => {
+                updateYearDisplay(parseInt(e.target.value));
+            });
+        }
+
+        // Update UI based on selected year
+        function updateYearDisplay(year) {
+            const index = reportData.years.indexOf(year);
+            if (index === -1) return;
+
+            document.getElementById('selectedYearDisplay').textContent = year + (year === 2026 ? ' (YTD)' : '');
+            document.getElementById('countChinese').textContent = reportData.chinese[index];
+            document.getElementById('countNonChinese').textContent = reportData.nonChinese[index];
+            document.getElementById('countUnclassified').textContent = reportData.unclassified[index];
+
+            // Toggle incomplete year badge
+            const badge2026 = document.getElementById('statusBadge2026');
+            if (year === 2026) {
+                badge2026.classList.remove('hidden');
+            } else {
+                badge2026.classList.add('hidden');
+            }
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show selected content
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Reset tab button styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-slate-800', 'text-slate-900', 'font-bold');
+                btn.classList.add('border-transparent', 'hover:text-slate-900');
+            });
+
+            // Highlight active tab button
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.remove('border-transparent', 'hover:text-slate-900');
+            activeBtn.classList.add('border-slate-800', 'text-slate-900', 'font-bold');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Artifact V2 — kitchen parameter model (working demonstration)</title>
+<style>
+  :root{
+    --ink:#3a3833;
+    --faint:#8a857a;
+    --line:#b9b2a4;
+    --accent:#e08a1e;
+    --teal:#1f8a8c;
+    --panel:#f4f1ea;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; padding:28px 18px 40px;
+    background:#faf8f3; color:var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .wrap{ max-width:980px; margin:0 auto; }
+  h1{
+    font-size:21px; font-weight:normal; letter-spacing:.04em;
+    margin:0 0 4px;
+  }
+  .sub{
+    font-size:12.5px; color:var(--faint);
+    font-family: Helvetica, Arial, sans-serif;
+    margin:0 0 16px; letter-spacing:.02em;
+  }
+  canvas{
+    display:block; width:100%; height:auto;
+    background:#fbf9f5;
+    border:1px solid var(--line);
+  }
+  .controls{
+    display:flex; flex-wrap:wrap; gap:22px; align-items:flex-start;
+    margin-top:16px; padding:14px 16px;
+    background:var(--panel); border:1px solid var(--line);
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  .ctl{ flex:1 1 220px; min-width:200px; }
+  .ctl label, .ctl .lab{
+    display:flex; justify-content:space-between;
+    font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink); margin-bottom:7px;
+  }
+  .ctl label .val, .ctl .lab .val{ color:var(--faint); text-transform:none; letter-spacing:0; }
+  .caption{
+    font-size:11.5px; color:var(--faint); line-height:1.45;
+    margin:6px 0 0;
+  }
+  input[type=range]{
+    width:100%; accent-color:var(--accent); height:22px; cursor:pointer;
+  }
+  input[type=number]{
+    width:90px; font-family: Helvetica, Arial, sans-serif; font-size:13px;
+    padding:5px 7px; border:1px solid var(--line); border-radius:2px;
+    background:#fff; color:var(--ink);
+  }
+  select{
+    font-family: Helvetica, Arial, sans-serif; font-size:13px;
+    padding:5px 7px; border:1px solid var(--line); border-radius:2px;
+    background:#fff; color:var(--ink);
+  }
+  .seg{ display:flex; gap:0; border:1px solid var(--ink); border-radius:2px; overflow:hidden; }
+  .seg button{
+    flex:1 1 auto; border:0; border-right:1px solid var(--ink);
+    border-radius:0; background:#fff;
+  }
+  .seg button:last-child{ border-right:0; }
+  .seg button.on{ background:var(--ink); color:#fff; }
+  .playwrap{ flex:0 0 auto; }
+  button{
+    font-family: Helvetica, Arial, sans-serif;
+    font-size:12.5px; letter-spacing:.06em;
+    padding:8px 20px; cursor:pointer;
+    background:#fff; color:var(--ink);
+    border:1px solid var(--ink); border-radius:2px;
+  }
+  button:hover{ background:var(--ink); color:#fff; }
+  .seg button:hover{ background:var(--ink); color:#fff; }
+  .basepanel{
+    margin-top:14px; padding:14px 16px;
+    background:#fff; border:1px solid var(--line);
+    font-family: Helvetica, Arial, sans-serif;
+  }
+  .basepanel h2{
+    font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    font-weight:bold; color:var(--ink); margin:0 0 12px;
+  }
+  .baserow{
+    display:flex; flex-wrap:wrap; gap:22px; align-items:flex-start;
+  }
+  .readouts{
+    display:flex; flex-wrap:wrap; gap:10px 34px;
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--line);
+    font-size:13px;
+  }
+  .readouts .ro{ min-width:130px; }
+  .readouts .ro .k{
+    display:block; font-size:10.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--faint); margin-bottom:2px;
+  }
+  .readouts .ro .v{ font-size:16px; color:var(--ink); }
+  .readouts .ro.overflow .v{ color:#b3543f; }
+  .settingsline{
+    margin:12px 0 0; font-size:12px; font-style:italic; color:var(--ink);
+  }
+  .legend{
+    margin-top:12px; font-family: Helvetica, Arial, sans-serif;
+    font-size:12px; color:var(--faint);
+    display:flex; gap:22px; flex-wrap:wrap;
+  }
+  .dot{
+    display:inline-block; width:9px; height:9px; border-radius:50%;
+    background:var(--accent); vertical-align:baseline; margin-right:6px;
+    box-shadow:0 0 6px 1px rgba(224,138,30,.55);
+  }
+  .dot.teal{
+    background:var(--teal);
+    box-shadow:0 0 6px 1px rgba(31,138,140,.55);
+  }
+  footer{
+    margin-top:26px; padding-top:10px; border-top:1px solid var(--line);
+    font-size:9.5px; line-height:1.55; color:var(--faint);
+    font-family: Helvetica, Arial, sans-serif;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>The Chinese Kitchen as Artifact — a declared parameter model</h1>
+  <p class="sub">Schematic shop unit, extruded from plan and cut in section. One kitchen, three flows: the front channel, the rear exit, the exhaust. Every number below is a setting, set by hand.</p>
+
+  <canvas id="scene" width="1200" height="760"></canvas>
+
+  <div class="controls">
+    <div class="ctl">
+      <label for="streetPressure">Street pressure (safety) <span class="val" id="pressureVal">70</span></label>
+      <input type="range" id="streetPressure" min="0" max="100" step="1" value="70">
+      <p class="caption">2019: mid-low · 2020–21: high · 2026: high (operator testimony)</p>
+    </div>
+    <div class="ctl">
+      <span class="lab">Production type</span>
+      <div class="seg" role="group" aria-label="Production type">
+        <button id="prodOrder" type="button" class="on">Made to order</button>
+        <button id="prodContinuous" type="button">Bakery / buffet — continuous</button>
+      </div>
+      <p class="caption">In made-to-order mode, emission follows demand — no customers, no cooking, almost no particles. In continuous mode, emission follows the schedule (base × gate), whatever the moment's demand.</p>
+    </div>
+    <div class="ctl">
+      <label for="popularity">Popularity <span class="val" id="popularityVal">× 1.00</span></label>
+      <input type="range" id="popularity" min="0" max="200" step="5" value="100">
+      <p class="caption">Platform rating and review volume, as a demand multiplier.</p>
+    </div>
+    <div class="ctl">
+      <span class="lab">Security</span>
+      <div class="seg" role="group" aria-label="Security">
+        <button id="secNone" type="button" class="on">None</button>
+        <button id="secPart" type="button">Part-time</button>
+        <button id="secFull" type="button">Full-time (≈ $6,000 / month)</button>
+      </div>
+      <p class="caption">Security removes; it does not deter. It buys back part of the front channel, at a monthly toll.</p>
+    </div>
+    <div class="playwrap">
+      <span class="lab">&nbsp;</span>
+      <button id="playBtn" type="button">Pause</button>
+    </div>
+  </div>
+
+  <div class="basepanel">
+    <h2>Normalised base</h2>
+    <div class="baserow">
+      <div class="ctl">
+        <label for="baseInput">Base — legal-capacity anchor</label>
+        <input type="number" id="baseInput" min="0" max="400" step="1" value="60">
+      </div>
+      <div class="ctl">
+        <label for="gate">Open-hours gate <span class="val" id="gateVal">Open</span></label>
+        <input type="range" id="gate" min="0" max="100" step="1" value="100">
+      </div>
+      <div class="ctl">
+        <label for="dayProfile">Day profile</label>
+        <select id="dayProfile">
+          <option value="0.85">Weekday (× 0.85)</option>
+          <option value="1" selected>Typical day (× 1.00)</option>
+          <option value="1.15">Weekend (× 1.15)</option>
+          <option value="1.3">Festival day (× 1.30)</option>
+        </select>
+      </div>
+    </div>
+    <div class="readouts">
+      <span class="ro"><span class="k">Activity index</span><span class="v" id="activityVal">60</span></span>
+      <span class="ro"><span class="k">Demand</span><span class="v" id="demandVal">60</span></span>
+      <span class="ro"><span class="k">Dine-in (front channel)</span><span class="v" id="dineInVal">0</span></span>
+      <span class="ro"><span class="k">Takeout</span><span class="v" id="takeoutVal">0</span></span>
+      <span class="ro overflow"><span class="k">Overflow</span><span class="v">Overflow → takeout: <span id="overflowVal">0</span></span></span>
+      <span class="ro"><span class="k">Kitchen emission</span><span class="v" id="emissionVal">0</span></span>
+    </div>
+    <p class="settingsline">Settings, not measurements — declared parameters.</p>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot"></span>smell / 鑊氣 — out the back door, and up the exhaust</span>
+    <span><span class="dot teal"></span>takeout — courier dots out the front</span>
+    <span>Gate closed = kitchen closed = no emission</span>
+  </div>
+
+  <footer>
+    Declared simulation — specification before computation. Parameters are settings chosen by the researcher, not measurements. No person is tracked or represented.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById("scene");
+  var ctx = canvas.getContext("2d");
+  var W = canvas.width, H = canvas.height;
+
+  /* ---------- plan geometry (metres, schematic) ----------
+     x: across the shop (width)   0 .. 7.5   (~25 ft lot)
+     y: along the shop (depth)    0 .. 30    front at y=0, rear at y=30
+     z: height                    0 .. ~4.2  (section cut below full height) */
+  var SHOP_W = 7.5, SHOP_D = 30;
+  var WALL_H = 3.1;          // side walls stop here — the sectional cut
+  var CUT_H  = 4.2;          // ghost line of the cut plane
+
+  // zones along depth
+  var ZONES = [
+    { y0: 0.0,  y1: 2.0,  name: "GLASS STOREFRONT", sub: "street face" },
+    { y0: 2.0,  y1: 17.0, name: "DINING",           sub: "tables" },
+    { y0: 17.0, y1: 25.5, name: "KITCHEN 廚房",      sub: "woks · range" },
+    { y0: 25.5, y1: 30.0, name: "REAR PASSAGE",     sub: "" }
+  ];
+  var KITCHEN = { x0: 0.7, x1: SHOP_W - 0.7, y0: 17.6, y1: 24.8 };
+  var DOOR = { x0: SHOP_W/2 - 0.65, x1: SHOP_W/2 + 0.65, y: SHOP_D }; // back door, centred on rear wall
+  var FRONT_DOOR_X = SHOP_W / 2; // takeout couriers leave through the storefront, near centre
+
+  /* the exhaust vent: a hood canopy over the wok line (y ≈ 23.6, the range),
+     narrowing to a duct that rises through the sectional cut and ends just
+     above it. The exhaust leaves at the vent outlet — a place, at a height —
+     not by drifting up through the open cut. */
+  var HOOD = { x0: 1.1, x1: SHOP_W - 0.9, y0: 22.2, y1: 25.0, mouth: 2.05, top: 2.75 };
+  var DUCT = { x0: 3.05, x1: 4.45, y0: 22.9, y1: 24.3, top: 5.0 };
+  DUCT.cx = (DUCT.x0 + DUCT.x1) / 2;
+  DUCT.cy = (DUCT.y0 + DUCT.y1) / 2;
+
+  /* ---------- isometric projection ---------- */
+  var COS = Math.cos(Math.PI/6), SIN = Math.sin(Math.PI/6);
+  var SCALE = 21.5;
+  var OX = W * 0.52, OY = 118;
+  function P(x, y, z){
+    return [ OX + (x - y) * COS * SCALE,
+             OY + (x + y) * SIN * SCALE - z * SCALE ];
+  }
+  function pt(p){ ctx.moveTo(p[0], p[1]); }
+  function ln(p){ ctx.lineTo(p[0], p[1]); }
+  function poly(points, close){
+    ctx.beginPath();
+    pt(points[0]);
+    for (var i = 1; i < points.length; i++) ln(points[i]);
+    if (close !== false) ctx.closePath();
+  }
+
+  /* ---------- controls ---------- */
+  var pressureEl   = document.getElementById("streetPressure");
+  var pressureVal  = document.getElementById("pressureVal");
+  var popularityEl = document.getElementById("popularity");
+  var popularityVal = document.getElementById("popularityVal");
+  var baseEl       = document.getElementById("baseInput");
+  var gateEl       = document.getElementById("gate");
+  var gateVal      = document.getElementById("gateVal");
+  var dayEl        = document.getElementById("dayProfile");
+  var prodOrderBtn = document.getElementById("prodOrder");
+  var prodContBtn  = document.getElementById("prodContinuous");
+  var secNoneBtn   = document.getElementById("secNone");
+  var secPartBtn   = document.getElementById("secPart");
+  var secFullBtn   = document.getElementById("secFull");
+  var activityVal  = document.getElementById("activityVal");
+  var demandVal    = document.getElementById("demandVal");
+  var dineInVal    = document.getElementById("dineInVal");
+  var takeoutVal   = document.getElementById("takeoutVal");
+  var overflowVal  = document.getElementById("overflowVal");
+  var emissionVal  = document.getElementById("emissionVal");
+  var playBtn      = document.getElementById("playBtn");
+  var playing = true;
+
+  var production = "order";        // "order" | "continuous"
+  var securityRestore = 0;         // 0 | 0.15 | 0.30 — share of the front channel bought back
+
+  function gateAmount(){ return gateEl.value / 100; }        // 0 = closed, 1 = fully open
+  function gateLabel(){
+    var g = gateAmount();
+    if (g <= 0.01) return "Closed";
+    if (g >= 0.99) return "Open";
+    return "Partly open";
+  }
+  function baseAmount(){
+    var b = parseFloat(baseEl.value);
+    if (isNaN(b) || b < 0) b = 0;
+    return b;
+  }
+
+  /* ---------- the declared model ----------
+     activity  = base × gate × day profile
+     demand    = activity × popularity
+     front channel factor = 1 − 0.75 × (street pressure / 100), plus what
+                            security buys back, capped at 1
+     dine-in   = min(demand × front factor, base)   — never exceeds capacity
+     overflow  = max(0, demand − base)              — routed to takeout
+     takeout   = demand − dine-in                   — overflow + pressure-shifted
+     emission  = made to order: demand served (dine-in + takeout)
+                 continuous:    base × gate × 0.9, the schedule rate        */
+  function model(){
+    var base = baseAmount();
+    var gate = gateAmount();
+    var day = parseFloat(dayEl.value) || 0;
+    var activity = base * gate * day;
+    var popularity = popularityEl.value / 100;
+    var demand = activity * popularity;
+    var pressure = pressureEl.value / 100;
+    var frontFactor = 1 - 0.75 * pressure + securityRestore;
+    if (frontFactor > 1) frontFactor = 1;
+    if (frontFactor < 0) frontFactor = 0;
+    var dineIn = Math.min(demand * frontFactor, base);
+    var overflow = Math.max(0, demand - base);
+    var takeout = demand - dineIn;
+    var emission = (production === "continuous")
+      ? base * gate * 0.9
+      : dineIn + takeout;
+    return {
+      base: base, gate: gate, day: day, activity: activity,
+      popularity: popularity, demand: demand, pressure: pressure,
+      frontFactor: frontFactor, dineIn: dineIn, overflow: overflow,
+      takeout: takeout, emission: emission
+    };
+  }
+
+  function refreshLabels(){
+    var m = model();
+    pressureVal.textContent = pressureEl.value;
+    popularityVal.textContent = "× " + (popularityEl.value / 100).toFixed(2);
+    gateVal.textContent = gateLabel();
+    activityVal.textContent = Math.round(m.activity);
+    demandVal.textContent = Math.round(m.demand);
+    dineInVal.textContent = Math.round(m.dineIn);
+    takeoutVal.textContent = Math.round(m.takeout);
+    overflowVal.textContent = Math.round(m.overflow);
+    emissionVal.textContent = Math.round(m.emission);
+  }
+
+  function setSeg(onBtn, offBtns){
+    onBtn.classList.add("on");
+    for (var i = 0; i < offBtns.length; i++) offBtns[i].classList.remove("on");
+  }
+  prodOrderBtn.addEventListener("click", function(){
+    production = "order";
+    setSeg(prodOrderBtn, [prodContBtn]);
+    refreshLabels();
+  });
+  prodContBtn.addEventListener("click", function(){
+    production = "continuous";
+    setSeg(prodContBtn, [prodOrderBtn]);
+    refreshLabels();
+  });
+  secNoneBtn.addEventListener("click", function(){
+    securityRestore = 0;
+    setSeg(secNoneBtn, [secPartBtn, secFullBtn]);
+    refreshLabels();
+  });
+  secPartBtn.addEventListener("click", function(){
+    securityRestore = 0.15;
+    setSeg(secPartBtn, [secNoneBtn, secFullBtn]);
+    refreshLabels();
+  });
+  secFullBtn.addEventListener("click", function(){
+    securityRestore = 0.30;
+    setSeg(secFullBtn, [secNoneBtn, secPartBtn]);
+    refreshLabels();
+  });
+
+  var inputs = [pressureEl, popularityEl, baseEl, gateEl, dayEl];
+  for (var ii = 0; ii < inputs.length; ii++){
+    inputs[ii].addEventListener("input", refreshLabels);
+    inputs[ii].addEventListener("change", refreshLabels);
+  }
+  playBtn.addEventListener("click", function(){
+    playing = !playing;
+    playBtn.textContent = playing ? "Pause" : "Play";
+    if (playing) requestAnimationFrame(frame);
+  });
+  refreshLabels();
+
+  /* ---------- particles ----------
+     Three streams, all travelling in the upper air layer:
+       "back"    — smell from the wok line, out the rear door (the V1 path)
+       "up"      — exhaust: wok line -> hood -> up the duct -> plume at the vent outlet
+       "takeout" — teal courier dots, out through the storefront           */
+  var MAXP = 1100;
+  var particles = [];
+  var smellAcc = 0, takeoutAcc = 0;
+
+  function spawnSmell(route){
+    return {
+      kind: route,
+      x: KITCHEN.x0 + Math.random() * (KITCHEN.x1 - KITCHEN.x0),
+      y: KITCHEN.y0 + Math.random() * 2.6,              // near the woks, front of kitchen
+      z: 1.1 + Math.random() * 0.9,                     // rises off the range
+      life: 0,
+      maxLife: 340 + Math.random() * 160,
+      seed: Math.random() * 1000,
+      r: 1.1 + Math.random() * 1.9
+    };
+  }
+  function spawnTakeout(){
+    return {
+      kind: "takeout",
+      x: 1.0 + Math.random() * (SHOP_W - 2.0),
+      y: 3.2 + Math.random() * 1.6,                     // picked up at the counter
+      z: 1.15 + Math.random() * 0.35,                   // carried at counter height
+      life: 0,
+      maxLife: 300 + Math.random() * 120,
+      seed: Math.random() * 1000,
+      r: 1.5 + Math.random() * 0.8
+    };
+  }
+
+  function stepParticles(){
+    var m = model();
+
+    // smell emission is proportional to the kitchen emission index;
+    // a base of 60 at full gate ≈ 3 particles per frame
+    smellAcc += (m.emission / 60) * 3;
+    while (smellAcc >= 1 && particles.length < MAXP){
+      smellAcc -= 1;
+      particles.push(spawnSmell(Math.random() < 0.6 ? "back" : "up"));
+    }
+    if (smellAcc > 4) smellAcc = 4;
+
+    // takeout dots are proportional to the takeout flow
+    takeoutAcc += (m.takeout / 60) * 1.6;
+    while (takeoutAcc >= 1 && particles.length < MAXP){
+      takeoutAcc -= 1;
+      particles.push(spawnTakeout());
+    }
+    if (takeoutAcc > 4) takeoutAcc = 4;
+
+    var t = performance.now() * 0.001;
+    var doorCx = (DOOR.x0 + DOOR.x1) / 2;
+    for (var i = particles.length - 1; i >= 0; i--){
+      var p = particles[i];
+      p.life++;
+
+      // gentle turbulence — layered sine wobble, reads as air, not a beam
+      p.x += Math.sin(t * 1.3 + p.seed) * 0.011
+           + Math.sin(t * 3.1 + p.seed * 1.7) * 0.005;
+      p.z += Math.cos(t * 0.9 + p.seed * 2.3) * 0.006;
+
+      if (p.kind === "back"){
+        // main drift: kitchen -> rear passage -> out the back door (+y)
+        var steer = (doorCx - p.x) * 0.004 * Math.max(0, (p.y - 20) / 10);
+        p.x += steer;
+        p.y += 0.055 + Math.sin(t * 0.6 + p.seed) * 0.006;
+        if (p.y < SHOP_D - 0.15){
+          if (p.x < 0.25) p.x = 0.25;
+          if (p.x > SHOP_W - 0.25) p.x = SHOP_W - 0.25;
+        }
+        if (p.z < 0.35) p.z = 0.35;
+        if (p.z > WALL_H - 0.15) p.z = WALL_H - 0.15;
+        if (p.y > SHOP_D + 2.2 || p.life > p.maxLife) particles.splice(i, 1);
+      } else if (p.kind === "up"){
+        // exhaust, in three stages: captured by the hood, carried up the
+        // duct as a concentrated column, released at the vent outlet —
+        // and only there does it become a plume
+        if (p.z < HOOD.mouth){
+          // stage 1: drift back over the wok line, rising into the hood mouth
+          p.y += (DUCT.cy - p.y) * 0.03 + 0.008;
+          p.x += (DUCT.cx - p.x) * 0.012;
+          p.z += (p.y > HOOD.y0 - 1.2) ? 0.028 : 0.012;
+        } else if (p.z < DUCT.top){
+          // stage 2: inside the hood throat and the duct — converge to the
+          // shaft and stay within its width; the column tightens, not spreads
+          p.x += (DUCT.cx - p.x) * 0.08;
+          p.y += (DUCT.cy - p.y) * 0.08;
+          if (p.z > HOOD.top){
+            if (p.x < DUCT.x0 + 0.12) p.x = DUCT.x0 + 0.12;
+            if (p.x > DUCT.x1 - 0.12) p.x = DUCT.x1 - 0.12;
+            if (p.y < DUCT.y0 + 0.12) p.y = DUCT.y0 + 0.12;
+            if (p.y > DUCT.y1 - 0.12) p.y = DUCT.y1 - 0.12;
+          }
+          if (p.r > 1.5) p.r -= 0.012;
+          p.z += 0.045;
+        } else {
+          // stage 3: out of the vent — the plume disperses and fades
+          p.z += 0.020;
+          p.x += Math.sin(t * 0.7 + p.seed) * 0.020 + 0.006;
+          p.y += Math.cos(t * 0.5 + p.seed) * 0.012;
+          p.r += 0.030;
+        }
+        if (p.z > DUCT.top + 1.25 || p.life > p.maxLife) particles.splice(i, 1);
+      } else { // takeout
+        // courier path: counter -> storefront -> out to the street (−y)
+        p.x += (FRONT_DOOR_X - p.x) * 0.006;
+        p.y -= 0.085 + Math.sin(t * 0.6 + p.seed) * 0.005;
+        if (p.y > 0.2 && p.y < SHOP_D){
+          if (p.x < 0.25) p.x = 0.25;
+          if (p.x > SHOP_W - 0.25) p.x = SHOP_W - 0.25;
+        }
+        if (p.y < -5.2 || p.life > p.maxLife) particles.splice(i, 1);
+      }
+    }
+  }
+
+  /* ---------- drawing ---------- */
+  /* the vent, drawn like the rest of the model: light line-work, translucent
+     faces — so the exhaust column reads as travelling INSIDE the shaft */
+  function drawVent(){
+    var ink = "#3a3833", line = "#a89f8d";
+
+    // hood canopy: a frustum — wide mouth over the woks, narrowing to the duct
+    // front sloped face
+    poly([P(HOOD.x0, HOOD.y0, HOOD.mouth), P(HOOD.x1, HOOD.y0, HOOD.mouth),
+          P(DUCT.x1, DUCT.y0, HOOD.top), P(DUCT.x0, DUCT.y0, HOOD.top)]);
+    ctx.fillStyle = "rgba(233,228,214,0.55)"; ctx.fill();
+    ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.stroke();
+    // right sloped face
+    poly([P(HOOD.x1, HOOD.y0, HOOD.mouth), P(HOOD.x1, HOOD.y1, HOOD.mouth),
+          P(DUCT.x1, DUCT.y1, HOOD.top), P(DUCT.x1, DUCT.y0, HOOD.top)]);
+    ctx.fillStyle = "rgba(226,219,199,0.50)"; ctx.fill(); ctx.stroke();
+    // left sloped face
+    poly([P(HOOD.x0, HOOD.y1, HOOD.mouth), P(HOOD.x0, HOOD.y0, HOOD.mouth),
+          P(DUCT.x0, DUCT.y0, HOOD.top), P(DUCT.x0, DUCT.y1, HOOD.top)]);
+    ctx.fillStyle = "rgba(238,233,219,0.45)"; ctx.fill(); ctx.stroke();
+    // the mouth rim — the opening the exhaust is captured through
+    poly([P(HOOD.x0, HOOD.y0, HOOD.mouth), P(HOOD.x1, HOOD.y0, HOOD.mouth),
+          P(HOOD.x1, HOOD.y1, HOOD.mouth), P(HOOD.x0, HOOD.y1, HOOD.mouth)]);
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.1; ctx.stroke();
+
+    // the duct: a vertical shaft from the hood, up through the cut
+    // front face
+    poly([P(DUCT.x0, DUCT.y0, HOOD.top), P(DUCT.x1, DUCT.y0, HOOD.top),
+          P(DUCT.x1, DUCT.y0, DUCT.top), P(DUCT.x0, DUCT.y0, DUCT.top)]);
+    ctx.fillStyle = "rgba(233,228,214,0.42)"; ctx.fill();
+    ctx.strokeStyle = line; ctx.lineWidth = 1; ctx.stroke();
+    // right face
+    poly([P(DUCT.x1, DUCT.y0, HOOD.top), P(DUCT.x1, DUCT.y1, HOOD.top),
+          P(DUCT.x1, DUCT.y1, DUCT.top), P(DUCT.x1, DUCT.y0, DUCT.top)]);
+    ctx.fillStyle = "rgba(226,219,199,0.36)"; ctx.fill(); ctx.stroke();
+    // left face
+    poly([P(DUCT.x0, DUCT.y1, HOOD.top), P(DUCT.x0, DUCT.y0, HOOD.top),
+          P(DUCT.x0, DUCT.y0, DUCT.top), P(DUCT.x0, DUCT.y1, DUCT.top)]);
+    ctx.fillStyle = "rgba(238,233,219,0.30)"; ctx.fill(); ctx.stroke();
+    // the outlet at the top: rim and opening, just above the cut plane
+    poly([P(DUCT.x0, DUCT.y0, DUCT.top), P(DUCT.x1, DUCT.y0, DUCT.top),
+          P(DUCT.x1, DUCT.y1, DUCT.top), P(DUCT.x0, DUCT.y1, DUCT.top)]);
+    ctx.fillStyle = "rgba(201,194,178,0.60)"; ctx.fill();
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.1; ctx.stroke();
+  }
+
+  function drawBuilding(){
+    var ink = "#3a3833", line = "#a89f8d", faint = "#c9c2b2";
+
+    // floor slab, zoned
+    for (var zi = 0; zi < ZONES.length; zi++){
+      var z = ZONES[zi];
+      var fill = zi === 2 ? "#f3e9d8" : (zi % 2 ? "#f6f3ec" : "#efece3");
+      poly([P(0, z.y0, 0), P(SHOP_W, z.y0, 0), P(SHOP_W, z.y1, 0), P(0, z.y1, 0)]);
+      ctx.fillStyle = fill; ctx.fill();
+      ctx.strokeStyle = faint; ctx.lineWidth = 1; ctx.stroke();
+    }
+    // slab edge (front + right side thickness)
+    poly([P(0, 0, 0), P(SHOP_W, 0, 0), P(SHOP_W, 0, -0.35), P(0, 0, -0.35)]);
+    ctx.fillStyle = "#e3ded0"; ctx.fill(); ctx.strokeStyle = line; ctx.stroke();
+    poly([P(SHOP_W, 0, 0), P(SHOP_W, SHOP_D, 0), P(SHOP_W, SHOP_D, -0.35), P(SHOP_W, 0, -0.35)]);
+    ctx.fillStyle = "#d9d3c2"; ctx.fill(); ctx.stroke();
+
+    // dining tables (simple blocks)
+    ctx.fillStyle = "#e8e2d2";
+    ctx.strokeStyle = line; ctx.lineWidth = 1;
+    var tx, ty;
+    for (ty = 4.5; ty <= 14.5; ty += 3.4){
+      for (tx = 1.1; tx <= 5.2; tx += 3.9){
+        poly([P(tx, ty, 0.75), P(tx + 1.7, ty, 0.75), P(tx + 1.7, ty + 1.3, 0.75), P(tx, ty + 1.3, 0.75)]);
+        ctx.fill(); ctx.stroke();
+        poly([P(tx, ty, 0), P(tx, ty, 0.75), P(tx, ty + 1.3, 0.75), P(tx, ty + 1.3, 0)], false);
+        ctx.stroke();
+      }
+    }
+
+    // kitchen range block along the back of the kitchen zone
+    poly([P(0.7, 22.6, 0), P(SHOP_W - 0.7, 22.6, 0), P(SHOP_W - 0.7, 24.6, 0), P(0.7, 24.6, 0)]);
+    ctx.strokeStyle = line; ctx.stroke();
+    poly([P(0.7, 22.6, 0.95), P(SHOP_W - 0.7, 22.6, 0.95), P(SHOP_W - 0.7, 24.6, 0.95), P(0.7, 24.6, 0.95)]);
+    ctx.fillStyle = "#ddd3bd"; ctx.fill(); ctx.stroke();
+    poly([P(0.7, 22.6, 0), P(0.7, 22.6, 0.95), P(0.7, 24.6, 0.95), P(0.7, 24.6, 0)]);
+    ctx.fillStyle = "#cfc4a9"; ctx.fill(); ctx.stroke();
+    // wok rings on the range top
+    ctx.strokeStyle = "#8a857a";
+    for (var wx = 1.6; wx <= 6.2; wx += 1.55){
+      var c = P(wx, 23.6, 0.95);
+      ctx.beginPath();
+      ctx.ellipse(c[0], c[1], 0.42 * SCALE * 0.9, 0.42 * SCALE * 0.45, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // the exhaust vent above the range — hood and duct
+    drawVent();
+
+    // left wall (solid, cut at WALL_H)
+    poly([P(0, 0, 0), P(0, SHOP_D, 0), P(0, SHOP_D, WALL_H), P(0, 0, WALL_H)]);
+    ctx.fillStyle = "rgba(233,228,214,0.85)"; ctx.fill();
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.1; ctx.stroke();
+
+    // right wall (solid, cut at WALL_H)
+    poly([P(SHOP_W, 0, 0), P(SHOP_W, SHOP_D, 0), P(SHOP_W, SHOP_D, WALL_H), P(SHOP_W, 0, WALL_H)]);
+    ctx.fillStyle = "rgba(226,219,199,0.65)"; ctx.fill();
+    ctx.strokeStyle = ink; ctx.stroke();
+
+    // sectional cut line — dashed ghost of the cut plane along both wall tops
+    ctx.strokeStyle = "#b3543f"; ctx.lineWidth = 1; ctx.setLineDash([6, 5]);
+    poly([P(0, 0, CUT_H), P(0, SHOP_D, CUT_H)], false); ctx.stroke();
+    poly([P(SHOP_W, 0, CUT_H), P(SHOP_W, SHOP_D, CUT_H)], false); ctx.stroke();
+    poly([P(0, SHOP_D, CUT_H), P(SHOP_W, SHOP_D, CUT_H)], false); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // glass storefront (front wall, translucent)
+    poly([P(0, 0, 0), P(SHOP_W, 0, 0), P(SHOP_W, 0, WALL_H), P(0, 0, WALL_H)]);
+    ctx.fillStyle = "rgba(168,196,205,0.30)"; ctx.fill();
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.1; ctx.stroke();
+    // mullions
+    ctx.strokeStyle = "rgba(58,56,51,0.55)"; ctx.lineWidth = 1;
+    for (var mx = 1.5; mx < SHOP_W; mx += 1.5){
+      poly([P(mx, 0, 0), P(mx, 0, WALL_H)], false); ctx.stroke();
+    }
+    poly([P(0, 0, WALL_H * 0.52), P(SHOP_W, 0, WALL_H * 0.52)], false); ctx.stroke();
+
+    // rear wall with the back door opening (two segments + lintel)
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.1;
+    poly([P(0, SHOP_D, 0), P(DOOR.x0, SHOP_D, 0), P(DOOR.x0, SHOP_D, WALL_H), P(0, SHOP_D, WALL_H)]);
+    ctx.fillStyle = "rgba(233,228,214,0.9)"; ctx.fill(); ctx.stroke();
+    poly([P(DOOR.x1, SHOP_D, 0), P(SHOP_W, SHOP_D, 0), P(SHOP_W, SHOP_D, WALL_H), P(DOOR.x1, SHOP_D, WALL_H)]);
+    ctx.fill(); ctx.stroke();
+    poly([P(DOOR.x0, SHOP_D, 2.3), P(DOOR.x1, SHOP_D, 2.3), P(DOOR.x1, SHOP_D, WALL_H), P(DOOR.x0, SHOP_D, WALL_H)]);
+    ctx.fill(); ctx.stroke();
+    // door leaf, swung open outward
+    poly([P(DOOR.x1, SHOP_D, 0), P(DOOR.x1 + 1.15, SHOP_D + 0.85, 0), P(DOOR.x1 + 1.15, SHOP_D + 0.85, 2.3), P(DOOR.x1, SHOP_D, 2.3)]);
+    ctx.fillStyle = "rgba(190,178,150,0.75)"; ctx.fill(); ctx.stroke();
+
+    // partition lines: dining | kitchen, kitchen | rear passage (low, partial height)
+    ctx.strokeStyle = line; ctx.lineWidth = 1;
+    poly([P(0, 17.0, 0), P(0, 17.0, 1.6), P(SHOP_W, 17.0, 1.6), P(SHOP_W, 17.0, 0)], false); ctx.stroke();
+    poly([P(0, 25.5, 0), P(0, 25.5, 1.6), P(SHOP_W, 25.5, 1.6), P(SHOP_W, 25.5, 0)], false); ctx.stroke();
+
+    drawLabels();
+  }
+
+  function label(x, y, z, text, align, dy){
+    var p = P(x, y, z);
+    ctx.font = "12px Helvetica, Arial, sans-serif";
+    ctx.textAlign = align || "center";
+    ctx.fillStyle = "#3a3833";
+    ctx.fillText(text, p[0], p[1] + (dy || 0));
+  }
+  function drawLabels(){
+    label(SHOP_W/2, 1.0, 0, "GLASS STOREFRONT", "center", 26);
+    label(SHOP_W/2, 9.5, 0, "DINING", "center", 30);
+    label(SHOP_W/2, 21.0, 0, "KITCHEN 廚房", "center", 34);
+    label(SHOP_W/2, 27.6, 0, "REAR PASSAGE", "center", 26);
+    // back door label, above the rear wall
+    label((DOOR.x0 + DOOR.x1)/2, SHOP_D, WALL_H + 0.55, "BACK DOOR 後門", "center", 0);
+    // vent label, at the duct where it leaves the roofline
+    var ep = P(DUCT.x1, DUCT.cy, DUCT.top);
+    ctx.font = "11px Helvetica, Arial, sans-serif";
+    ctx.textAlign = "left"; ctx.fillStyle = "#b3543f";
+    ctx.fillText("exhaust vent", ep[0] + 8, ep[1] - 2);
+    // cut note
+    var cp = P(0, SHOP_D, CUT_H);
+    ctx.font = "11px Helvetica, Arial, sans-serif";
+    ctx.textAlign = "left"; ctx.fillStyle = "#b3543f";
+    ctx.fillText("— sectional cut (roof / upper part removed)", cp[0] + 6, cp[1] - 6);
+    // street note at the front
+    var sp = P(SHOP_W/2, -1.6, 0);
+    ctx.font = "italic 12px Georgia, serif";
+    ctx.textAlign = "center"; ctx.fillStyle = "#8a857a";
+    ctx.fillText("street — takeout leaves this way", sp[0], sp[1]);
+  }
+
+  function drawParticles(){
+    // painter order: draw by (x+y) ascending so nearer particles sit on top
+    var sorted = particles.slice().sort(function(a, b){ return (a.x + a.y) - (b.x + b.y); });
+    for (var i = 0; i < sorted.length; i++){
+      var p = sorted[i];
+      var s = P(p.x, p.y, p.z);
+      if (s[0] < -20 || s[0] > W + 20 || s[1] < -30 || s[1] > H + 20) continue;
+      var fadeIn = Math.min(1, p.life / 26);
+      if (p.kind === "takeout"){
+        var fadeOutT = p.y < 0 ? Math.max(0, 1 + p.y / 5.2) : 1;
+        var aT = 0.85 * fadeIn * fadeOutT;
+        var gT = ctx.createRadialGradient(s[0], s[1], 0, s[0], s[1], p.r * 3.2);
+        gT.addColorStop(0, "rgba(64,178,180," + (aT * 0.8).toFixed(3) + ")");
+        gT.addColorStop(1, "rgba(31,138,140,0)");
+        ctx.fillStyle = gT;
+        ctx.beginPath();
+        ctx.arc(s[0], s[1], p.r * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(23,116,118," + aT.toFixed(3) + ")";
+        ctx.beginPath();
+        ctx.arc(s[0], s[1], p.r, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        var fadeOut = 1;
+        if (p.kind === "back" && p.y > SHOP_D - 0.4){
+          fadeOut = Math.max(0, 1 - (p.y - (SHOP_D - 0.4)) / 2.4);
+        }
+        if (p.kind === "up" && p.z > DUCT.top - 0.1){
+          // no fading inside the duct — the fade belongs to the plume,
+          // which begins at the vent outlet
+          fadeOut = Math.max(0, 1 - (p.z - (DUCT.top - 0.1)) / 1.35);
+        }
+        var a = 0.75 * fadeIn * fadeOut;
+        var grad = ctx.createRadialGradient(s[0], s[1], 0, s[0], s[1], p.r * 3.4);
+        grad.addColorStop(0, "rgba(240,164,50," + (a * 0.85).toFixed(3) + ")");
+        grad.addColorStop(0.55, "rgba(224,138,30," + (a * 0.35).toFixed(3) + ")");
+        grad.addColorStop(1, "rgba(224,138,30,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(s[0], s[1], p.r * 3.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(214,126,16," + a.toFixed(3) + ")";
+        ctx.beginPath();
+        ctx.arc(s[0], s[1], p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  function frame(){
+    ctx.clearRect(0, 0, W, H);
+    drawBuilding();
+    if (playing) stepParticles();
+    drawParticles();
+    if (playing) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
